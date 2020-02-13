@@ -33,3 +33,6 @@ app.use(function(req, res, next){
 		console.log("The file" + filename + "was requested.");
 		next();
 });
+
+const geoJSON = require('./routes/geoJSON');
+app.use('/', geoJSON);
