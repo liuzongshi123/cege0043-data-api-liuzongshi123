@@ -1,7 +1,7 @@
 var express = require('express'); 
 var pg = require('pg'); 
-var geoJSON = require('express').Router(); 
 var fs = require('fs'); 
+var geoJSON = require('express').Router(); 
 var configtext = ""+fs.readFileSync("/home/studentuser/certs/postGISConnection.js");
 
  // now convert the configruation file into the correct format -i.e. a name/value pair array
