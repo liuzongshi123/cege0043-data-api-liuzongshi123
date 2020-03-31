@@ -111,5 +111,6 @@ geoJSON.get('/getGeoJSON/:tablename/:geomcolumn', function (req,res) {
 		}); 
 	}); 
 });
+
 module.exports = geoJSON;
 
