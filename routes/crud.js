@@ -13,7 +13,8 @@ for (var i = 0; i < configarray.length; i++) {
 }
 var pool = new pg.Pool(config);
 console.log(config);
-	crud.route('/testCRUD').get(function (req,res) { 
+	
+crud.route('/testCRUD').get(function (req,res) { 
 	res.json({message:req.originalUrl}); 
 });
 
