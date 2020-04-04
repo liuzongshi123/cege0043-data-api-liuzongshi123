@@ -69,9 +69,9 @@ crud.post('/deleteFormData',(req,res) => {
 		}
 		var param1 = req.body.port_id ; 
 		var param2 = req.body.id ; 
-		var querystring = "DELETE from public.formdata where id = $1 and port_id = $2"; 
+		var querystring = "DELETE from public.quizquestions where id = $1 and port_id = $2"; 
 			console.log(querystring); 
-			client.query( querystring,[param2,param1],function(err,result) { 
+			client.query(querystring,[param2,param1],function(err,result) { 
 			done();
 			if(err){ 
 				console.log(err);
