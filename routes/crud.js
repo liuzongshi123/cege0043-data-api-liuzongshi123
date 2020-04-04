@@ -32,28 +32,29 @@ pool.connect(function(err,client,done) {
 	var param1 = req.body.longitude ; 
 	var param2 = req.body.latitude ;
 	
-	var param3 = req.body.name ; 
-	var param4 = req.body.surname ; 
-	var param5 = req.body.module; 
-	var param6 = req.body.language; 
-	var param7 = req.body.modulelist; 
-	var param8 = req.body.lecturetime ; 
+	var param3 = req.body.question_title ; 
+	var param4 = req.body.question_text ; 
+	var param5 = req.body.answer_1; 
+	var param6 = req.body.answer_2; 
+	var param7 = req.body.answer_3; 
+	var param8 = req.body.answer_4; 
 	var param9 = req.body.port_id ;
+	var param10 = req.body.correct_answer ;
 	// no need for injection prevention for st_geomfromtext as if 
 	// the lat/lng values are not numbers it will not process them at all 
 	// impossible to run a statement such as st_geomfromtext('POINT(delete from public.formdata')
-	var geometrystring = "st_geomfromtext('POINT("+req.body.latitude+" "+req.body.longitude+")',4326)";
-	var querystring = "INSERT into public.formdata(name,surname,module,language, modulelist,lecturetime, port_id,location) values ";
-	querystring += "($1,$2,$3,$4,$5,$6,$7,";
-	querystring += geometrystring + ")";
+	var geometrystring = "st_geomfromtext('POINT("+req.body.longitude+ " "+req.body.latitude +")',4326)";
+    var querystring = "INSERT into public.quizquestions (question_title,question_text,answer_1,answer_2,answer_3,answer_4,port_id,correct_answer,location) values ";
+    querystring += "($1,$2,$3,$4,$5,$6,$7,$8,";
+    querystring += geometrystring + ")";
 		console.log(querystring); 
-		client.query(querystring,[param3,param4,param5,param6,param7,param8,param9],function(err,result) {
+		client.query(querystring,[param3,param4,param5,param6,param7,param8,param9,param10],function(err,result) {
 		done();		
 		if(err){
 			console.log(err);
 			res.status(400).send(err); 
 		}
-		res.status(200).send("Form Data "+ req.body.name+ " has been inserted");
+		res.status(200).send("Question "+ req.body.question_title+ " has been inserted");
 		});
 	}); 
 });
