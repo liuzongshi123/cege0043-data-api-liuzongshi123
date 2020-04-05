@@ -82,4 +82,32 @@ crud.post('/deleteFormData',(req,res) => {
 	}); 
 });
 
+
+crud.post('/insertAnswerData',(req,res) => { 
+	console.dir(req.body);
+
+pool.connect(function(err,client,done) { 
+	if(err){ 
+		console.log("not able to get connection "+ err); 
+		res.status(400).send(err); 
+	}
+	var param1 = req.body.port_id ; 
+	var param2 = req.body.question_id ;
+	var param3 = req.body.answer_selected ; 
+	var param4 = req.body.correct_answer ; 
+
+	var querystring = "INSERT into public.quizanswers (port_id, question_id, answer_selected, correct_answer) values (";
+		querystring += "$1,$2,$3,$4)";
+		console.log(querystring); 
+		client.query(querystring,[param1,param2,param3,param4],function(err,result) {
+		done();		
+		if(err){
+			console.log(err);
+			res.status(400).send(err); 
+		}
+		res.status(200).send("Answer of Question with ID "+ param2+ " and port_id "+ param1 + " has been inserted");
+		});
+	}); 
+});
+
 module.exports = crud;
