@@ -119,7 +119,7 @@ geoJSON.get('/quizanswers', function (req,res) {
       console.log("not able to get connection "+ err); 
       res.status(400).send(err); 
     } 
-    var querystring = "select array_to_json (array_agg(c)) from (SELECT COUNT(*) AS num_questions from public.quizanswers where (answer_selected = correct_answer) and port_id = $1) c;"; 
+    var querystring = "select  array_to_json (array_agg(c)) from (select * from public.quizanswers where port_id = 30283) c "; 
     client.query(querystring,function(err,result) { 
       done(); 
       if(err){ 
