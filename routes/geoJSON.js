@@ -137,7 +137,31 @@ geoJSON.get('/quizanswers/correctnumber', function (req,res) {
       console.log("not able to get connection "+ err); 
       res.status(400).send(err); 
     } 
-    var querystring = "select array_to_json (array_agg(c)) from (SELECT COUNT(*) AS num_questions from public.quizanswers where (answer_selected = correct_answer) and port_id = 30283) c"; 
+    var querystring = "select array_to_json (array_agg(c)) from (SELECT COUNT(*) "; 
+    querystring = querystring + "AS num_questions from public.quizanswers where ";
+    querystring = querystring + "(answer_selected = correct_answer) and port_id = 30283) c";
+    client.query(querystring,function(err,result) { 
+      done(); 
+      if(err){ 
+        console.log(err); 
+        res.status(400).send(err); 
+      } 
+      res.status(200).send(result.rows); 
+    }); 
+    }); 
+  });
+
+
+geoJSON.get('/quizanswers/ranking', function (req,res) { 
+  pool.connect(function(err,client,done) { 
+    if(err){ 
+      console.log("not able to get connection "+ err); 
+      res.status(400).send(err); 
+    } 
+    var querystring = "select array_to_json (array_agg(hh)) from (select c.rank from ";
+    querystring = querystring + "(SELECT b.port_id, rank()over (order by num_questions desc) as rank  from ";
+    querystring = querystring + "(select COUNT(*) AS num_questions, port_id  from public.quizanswers where ";
+    querystring = querystring + "answer_selected = correct_answer group by port_id) b) c where c.port_id = 30283) hh";
     client.query(querystring,function(err,result) { 
       done(); 
       if(err){ 
