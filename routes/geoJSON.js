@@ -195,4 +195,44 @@ geoJSON.get('/quizanswers/topscorers', function (req,res) {
     }); 
   });
 
+
+geoJSON.get('/quizanswers/participationrate/my', function (req,res) { 
+  pool.connect(function(err,client,done) { 
+    if(err){ 
+      console.log("not able to get connection "+ err); 
+      res.status(400).send(err); 
+    } 
+    var querystring = "select array_to_json (array_agg(c)) from ";
+    querystring = querystring + "(select * from public.participation_rates where port_id = 30283) c";
+    client.query(querystring,function(err,result) { 
+      done(); 
+      if(err){ 
+        console.log(err); 
+        res.status(400).send(err); 
+      } 
+      res.status(200).send(result.rows); 
+    }); 
+    }); 
+  });
+
+
+geoJSON.get('/quizanswers/participationrate/all', function (req,res) { 
+  pool.connect(function(err,client,done) { 
+    if(err){ 
+      console.log("not able to get connection "+ err); 
+      res.status(400).send(err); 
+    } 
+    var querystring = "select array_to_json (array_agg(c)) from ";
+    querystring = querystring + "(select day, sum(questions_answered) as questions_answered, sum(questions_correct) as questions_correct ";
+    querystring = querystring + "from public.participation_rates group by day) c";
+    client.query(querystring,function(err,result) { 
+      done(); 
+      if(err){ 
+        console.log(err); 
+        res.status(400).send(err); 
+      } 
+      res.status(200).send(result.rows); 
+    }); 
+    }); 
+  });
 module.exports = geoJSON;
