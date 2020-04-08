@@ -235,4 +235,28 @@ geoJSON.get('/quizanswers/participationrate/all', function (req,res) {
     }); 
     }); 
   });
+
+geoJSON.get('/questionAdded/Lastweek', function (req,res) { 
+  pool.connect(function(err,client,done) { 
+    if(err){ 
+      console.log("not able to get connection "+ err); 
+      res.status(400).send(err); 
+    } 
+    var querystring = "SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features  FROM ";
+    querystring = querystring + "(SELECT 'Feature' As type     , ST_AsGeoJSON(lg.location)::json As geometry, ";
+    querystring = querystring + "row_to_json((SELECT l FROM (SELECT id, question_title, question_text, answer_1, ";
+    querystring = querystring + "answer_2, answer_3, answer_4, port_id, correct_answer) As l ";
+    querystring = querystring + ")) As properties FROM public.quizquestions As ";
+    querystring = querystring + "lg where timestamp > NOW()::DATE-EXTRACT(DOW FROM NOW())::INTEGER-7  limit 100  ) As f";
+    client.query(querystring,function(err,result) { 
+      done(); 
+      if(err){ 
+        console.log(err); 
+        res.status(400).send(err); 
+      } 
+      res.status(200).send(result.rows); 
+    }); 
+    }); 
+  });
+
 module.exports = geoJSON;
