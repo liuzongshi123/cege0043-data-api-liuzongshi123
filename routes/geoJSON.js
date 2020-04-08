@@ -259,7 +259,7 @@ geoJSON.get('/questionAdded/Lastweek', function (req,res) {
     }); 
   });
 
-geoJSON.get('/FiveClosestPoint', function (req,res) {
+geoJSON.post('/FiveClosestPoint', function (req,res) {
   console.dir(req.body);
   pool.connect(function(err,client,done) { 
     if(err){ 
