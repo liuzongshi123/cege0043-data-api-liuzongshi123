@@ -330,4 +330,28 @@ geoJSON.get('/LastFiveQuestionsAnsewred', function (req,res) {
     }); 
   });
 
+geoJSON.get('/AnsweredWrong', function (req,res) {
+  pool.connect(function(err,client,done) { 
+    if(err){ 
+      console.log("not able to get connection "+ err); 
+      res.status(400).send(err); 
+    } 
+    var querystring = "SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features  FROM ";
+    querystring = querystring + "(SELECT 'Feature' As type     , ST_AsGeoJSON(lg.location)::json As geometry, ";
+    querystring = querystring + "row_to_json((SELECT l FROM (SELECT id, question_title, question_text, answer_1, answer_2, ";
+    querystring = querystring + "answer_3, answer_4, port_id, correct_answer) As l )) As properties ";
+    querystring = querystring + "FROM (select * from public.quizquestions where id in ( select question_id from public.quizanswers ";
+    querystring = querystring + "where port_id = 30283 and answer_selected <> correct_answer union all select id from public.quizquestions ";
+    querystring = querystring + "where id not in (select question_id from public.quizanswers) and port_id = 30283) ) as lg) As f";
+    client.query(querystring,function(err,result) { 
+      done(); 
+      if(err){ 
+        console.log(err); 
+        res.status(400).send(err); 
+      } 
+      res.status(200).send(result.rows); 
+    }); 
+    }); 
+  });
+
 module.exports = geoJSON;
