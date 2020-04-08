@@ -306,4 +306,28 @@ geoJSON.get('/FiveDifficultPoint', function (req,res) {
     }); 
   });
 
+geoJSON.get('/LastFiveQuestionsAnsewred', function (req,res) {
+  pool.connect(function(err,client,done) { 
+    if(err){ 
+      console.log("not able to get connection "+ err); 
+      res.status(400).send(err); 
+    } 
+    var querystring = "SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features  FROM ";
+    querystring = querystring + "(SELECT 'Feature' As type     , ST_AsGeoJSON(lg.location)::json As geometry, ";
+    querystring = querystring + "row_to_json((SELECT l FROM (SELECT id, question_title, question_text, answer_1, answer_2, ";
+    querystring = querystring + "answer_3, answer_4, port_id, correct_answer, answer_correct) As l )) As properties ";
+    querystring = querystring + "FROM (select a.*, b.answer_correct from public.quizquestions a inner join ";
+    querystring = querystring + "(select question_id, answer_selected=correct_answer as answer_correct from public.quizanswers ";
+    querystring = querystring + "where port_id = 30283 order by timestamp desc limit 5) b on a.id = b.question_id) as lg) As f";
+    client.query(querystring,function(err,result) { 
+      done(); 
+      if(err){ 
+        console.log(err); 
+        res.status(400).send(err); 
+      } 
+      res.status(200).send(result.rows); 
+    }); 
+    }); 
+  });
+
 module.exports = geoJSON;
