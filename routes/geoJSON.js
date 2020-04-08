@@ -284,4 +284,26 @@ geoJSON.post('/FiveClosestPoint', function (req,res) {
     }); 
   });
 
+geoJSON.get('/FiveDifficultPoint', function (req,res) {
+  pool.connect(function(err,client,done) { 
+    if(err){ 
+      console.log("not able to get connection "+ err); 
+      res.status(400).send(err); 
+    } 
+    var querystring = "select array_to_json (array_agg(d)) from ";
+    querystring = querystring + "(select c.* from public.quizquestions c inner join ";
+    querystring = querystring + "(select count(*) as incorrectanswers, question_id from public.quizanswers where ";
+    querystring = querystring + "answer_selected <> correct_answer group by question_id ";
+    querystring = querystring + "order by incorrectanswers desc limit 5) b on b.question_id = c.id) d";
+    client.query(querystring,function(err,result) { 
+      done(); 
+      if(err){ 
+        console.log(err); 
+        res.status(400).send(err); 
+      } 
+      res.status(200).send(result.rows); 
+    }); 
+    }); 
+  });
+
 module.exports = geoJSON;
