@@ -55,72 +55,24 @@ geoJSON.get('/getPOI', function (req,res) {
     }); 
   });
 
-geoJSON.get('/getGeoJSON/:tablename/:geomcolumn', function (req,res) { 
-  pool.connect(function(err,client,done) { 
-    if(err){ 
-      console.log("not able to get connection "+ err); 
-      res.status(400).send(err); 
-    }
-    var colnames = "";
-    // first get a list of the columns that are in the table 
-    // use string_agg to generate a comma separated list that can then be pasted into the next query
-    var tablename = req.params.tablename; 
-    var geomcolumn = req.params.geomcolumn; 
-    var querystring = "select string_agg(colname,',') from ( select column_name as colname "; 
-    querystring = querystring + " FROM information_schema.columns as colname "; 
-    querystring = querystring + " where table_name =$1"; 
-    querystring = querystring + " and column_name <> $2 and data_type <> 'USER-DEFINED') as cols "; 
-
-      console.log(querystring);
-
-      // now run the query
-      client.query(querystring,[tablename,geomcolumn], function(err,result){ 
-        if(err){ 
-          console.log(err); 
-          res.status(400).send(err); 
-      } 
-      thecolnames = result.rows[0].string_agg; 
-      colnames = thecolnames; 
-      console.log("the colnames "+thecolnames);
-
-      // now use the inbuilt geoJSON functionality 
-      // and create the required geoJSON format using a query adapted from here: 
-      // http://www.postgresonline.com/journal/archives/267-Creating-GeoJSON-Feature-Collections-with-JSON-and-PostGIS-functions.html, accessed 4th January 2018 
-      // note that query needs to be a single string with no line breaks so built it up bit by bit
-      var querystring = " SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features FROM "; 
-      querystring = querystring + "(SELECT 'Feature' As type , ST_AsGeoJSON(lg." + req.params.geomcolumn+")::json As geometry, ";
-      querystring = querystring + "row_to_json((SELECT l FROM (SELECT "+colnames + ") As l )) As properties"; 
-      // depending on whether we have a port number, do differen things 
-      if (req.params.portNumber) { 
-        querystring = querystring + " FROM "+req.params.tablename+" As lg where lg.port_id = '"+req.params.portNumber + "' limit 100 ) As f "; 
-      } 
-      else { 
-        querystring = querystring + " FROM "+req.params.tablename+" As lg where lg.port_id = 30283 limit 100 ) As f "; 
-      } 
-      console.log(querystring);
-
-      // run the second query 
-      client.query(querystring,function(err,result){ 
-      //call `done()` to release the client back to the pool 
-      done(); 
-      if(err){ 
-        console.log(err); res.status(400).send(err); 
-        } 
-        res.status(200).send(result.rows); 
-      }); 
-    }); 
-  }); 
-});
-
-
-geoJSON.get('/quizanswers', function (req,res) { 
+geoJSON.get('/getGeoJSON/quizquestions/location/:port_id', function (req,res) { 
   pool.connect(function(err,client,done) { 
     if(err){ 
       console.log("not able to get connection "+ err); 
       res.status(400).send(err); 
     } 
-    var querystring = "select  array_to_json (array_agg(c)) from (select * from public.quizanswers where port_id = 30283) c "; 
-    client.query(querystring,function(err,result) { 
+
+    var colnames = "id, question_title, question_text, answer_1,";
+        colnames = colnames + "answer_2, answer_3, answer_4, port_id, correct_answer";
+        console.log("colnames are " + colnames);
+
+    var port_id = req.params.port_id;
+
+    var querystring = "SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features  FROM "; 
+    querystring = querystring + "(SELECT 'Feature' As type     , ST_AsGeoJSON(lg.location)::json As geometry, ";
+    querystring = querystring + "row_to_json((SELECT l FROM (SELECT "+colnames + " ) As l      )) As properties ";
+    querystring = querystring + "FROM public.quizquestions As lg where port_id = $1 limit 100  ) As f";
+    client.query(querystring,[port_id],function(err,result) { 
       done(); 
       if(err){ 
         console.log(err); 
@@ -131,16 +83,37 @@ geoJSON.get('/quizanswers', function (req,res) {
     }); 
   });
 
-geoJSON.get('/quizanswers/correctnumber', function (req,res) { 
+
+geoJSON.get('/quizanswers/:port_id', function (req,res) { 
   pool.connect(function(err,client,done) { 
     if(err){ 
       console.log("not able to get connection "+ err); 
       res.status(400).send(err); 
     } 
+    var port_id = req.params.port_id;
+    var querystring = "select  array_to_json (array_agg(c)) from (select * from public.quizanswers where port_id = $1) c "; 
+    client.query(querystring,[port_id],function(err,result) { 
+      done(); 
+      if(err){ 
+        console.log(err); 
+        res.status(400).send(err); 
+      } 
+      res.status(200).send(result.rows); 
+    }); 
+    }); 
+  });
+
+geoJSON.get('/quizanswers/correctnumber/:port_id', function (req,res) { 
+  pool.connect(function(err,client,done) { 
+    if(err){ 
+      console.log("not able to get connection "+ err); 
+      res.status(400).send(err); 
+    } 
+    var port_id = req.params.port_id;
     var querystring = "select array_to_json (array_agg(c)) from (SELECT COUNT(*) "; 
     querystring = querystring + "AS num_questions from public.quizanswers where ";
-    querystring = querystring + "(answer_selected = correct_answer) and port_id = 30283) c";
-    client.query(querystring,function(err,result) { 
+    querystring = querystring + "(answer_selected = correct_answer) and port_id = $1) c";
+    client.query(querystring,[port_id],function(err,result) { 
       done(); 
       if(err){ 
         console.log(err); 
@@ -152,17 +125,18 @@ geoJSON.get('/quizanswers/correctnumber', function (req,res) {
   });
 
 
-geoJSON.get('/quizanswers/ranking', function (req,res) { 
+geoJSON.get('/quizanswers/ranking/:port_id', function (req,res) { 
   pool.connect(function(err,client,done) { 
     if(err){ 
       console.log("not able to get connection "+ err); 
       res.status(400).send(err); 
     } 
+    var port_id = req.params.port_id;
     var querystring = "select array_to_json (array_agg(hh)) from (select c.rank from ";
     querystring = querystring + "(SELECT b.port_id, rank()over (order by num_questions desc) as rank  from ";
     querystring = querystring + "(select COUNT(*) AS num_questions, port_id  from public.quizanswers where ";
-    querystring = querystring + "answer_selected = correct_answer group by port_id) b) c where c.port_id = 30283) hh";
-    client.query(querystring,function(err,result) { 
+    querystring = querystring + "answer_selected = correct_answer group by port_id) b) c where c.port_id = $1) hh";
+    client.query(querystring,[port_id],function(err,result) { 
       done(); 
       if(err){ 
         console.log(err); 
@@ -180,10 +154,10 @@ geoJSON.get('/quizanswers/topscorers', function (req,res) {
       console.log("not able to get connection "+ err); 
       res.status(400).send(err); 
     } 
-    var querystring = "select array_to_json (array_agg(c)) ";
-    querystring = querystring + "from (select rank() over (order by num_questions desc) ";
-    querystring = querystring + "as rank , port_id from (select COUNT(*) AS num_questions, ";
-    querystring = querystring + "port_id from public.quizanswers where answer_selected = correct_answer group by port_id) b limit 5) c";
+    var querystring = "select array_to_json (array_agg(c)) from ";
+    querystring = querystring + "(select rank() over (order by num_questions desc) as rank , port_id ";
+    querystring = querystring + "from (select COUNT(*) AS num_questions, port_id ";
+    querystring = querystring + "from public.quizanswers where answer_selected = correct_answergroup by port_id) b limit 5) c";
     client.query(querystring,function(err,result) { 
       done(); 
       if(err){ 
@@ -196,15 +170,16 @@ geoJSON.get('/quizanswers/topscorers', function (req,res) {
   });
 
 
-geoJSON.get('/quizanswers/participationrate/my', function (req,res) { 
+geoJSON.get('/quizanswers/participationrate/my/:port_id', function (req,res) { 
   pool.connect(function(err,client,done) { 
     if(err){ 
       console.log("not able to get connection "+ err); 
       res.status(400).send(err); 
     } 
+    var port_id = req.params.port_id;
     var querystring = "select array_to_json (array_agg(c)) from ";
-    querystring = querystring + "(select * from public.participation_rates where port_id = 30283) c";
-    client.query(querystring,function(err,result) { 
+    querystring = querystring + "(select * from public.participation_rates where port_id = $1) c";
+    client.query(querystring,[port_id],function(err,result) { 
       done(); 
       if(err){ 
         console.log(err); 
@@ -306,20 +281,21 @@ geoJSON.get('/FiveDifficultPoint', function (req,res) {
     }); 
   });
 
-geoJSON.get('/LastFiveQuestionsAnsewred', function (req,res) {
+geoJSON.get('/LastFiveQuestionsAnsewred/:port_id', function (req,res) {
   pool.connect(function(err,client,done) { 
     if(err){ 
       console.log("not able to get connection "+ err); 
       res.status(400).send(err); 
     } 
+    var port_id = req.params.port_id;
     var querystring = "SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features  FROM ";
     querystring = querystring + "(SELECT 'Feature' As type     , ST_AsGeoJSON(lg.location)::json As geometry, ";
     querystring = querystring + "row_to_json((SELECT l FROM (SELECT id, question_title, question_text, answer_1, answer_2, ";
     querystring = querystring + "answer_3, answer_4, port_id, correct_answer, answer_correct) As l )) As properties ";
     querystring = querystring + "FROM (select a.*, b.answer_correct from public.quizquestions a inner join ";
     querystring = querystring + "(select question_id, answer_selected=correct_answer as answer_correct from public.quizanswers ";
-    querystring = querystring + "where port_id = 30283 order by timestamp desc limit 5) b on a.id = b.question_id) as lg) As f";
-    client.query(querystring,function(err,result) { 
+    querystring = querystring + "where port_id = $1 order by timestamp desc limit 5) b on a.id = b.question_id) as lg) As f";
+    client.query(querystring,[port_id],function(err,result) { 
       done(); 
       if(err){ 
         console.log(err); 
@@ -330,20 +306,21 @@ geoJSON.get('/LastFiveQuestionsAnsewred', function (req,res) {
     }); 
   });
 
-geoJSON.get('/AnsweredWrong', function (req,res) {
+geoJSON.get('/AnsweredWrong/:port_id', function (req,res) {
   pool.connect(function(err,client,done) { 
     if(err){ 
       console.log("not able to get connection "+ err); 
       res.status(400).send(err); 
     } 
+    var port_id = req.params.port_id;
     var querystring = "SELECT 'FeatureCollection' As type, array_to_json(array_agg(f)) As features  FROM ";
     querystring = querystring + "(SELECT 'Feature' As type     , ST_AsGeoJSON(lg.location)::json As geometry, ";
     querystring = querystring + "row_to_json((SELECT l FROM (SELECT id, question_title, question_text, answer_1, answer_2, ";
     querystring = querystring + "answer_3, answer_4, port_id, correct_answer) As l )) As properties ";
     querystring = querystring + "FROM (select * from public.quizquestions where id in ( select question_id from public.quizanswers ";
-    querystring = querystring + "where port_id = 30283 and answer_selected <> correct_answer union all select id from public.quizquestions ";
-    querystring = querystring + "where id not in (select question_id from public.quizanswers) and port_id = 30283) ) as lg) As f";
-    client.query(querystring,function(err,result) { 
+    querystring = querystring + "where port_id = $1 and answer_selected <> correct_answer union all select id from public.quizquestions ";
+    querystring = querystring + "where id not in (select question_id from public.quizanswers) and port_id = $2) ) as lg) As f";
+    client.query(querystring,[port_id,port_id],function(err,result) { 
       done(); 
       if(err){ 
         console.log(err); 
