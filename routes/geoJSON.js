@@ -148,7 +148,7 @@ geoJSON.get('/quizanswers/ranking/:port_id', function (req,res) {
   });
 
 
-geoJSON.get('/quizanswers/topscorers', function (req,res) { 
+geoJSON.get('/topscorers', function (req,res) { 
   pool.connect(function(err,client,done) { 
     if(err){ 
       console.log("not able to get connection "+ err); 
@@ -157,7 +157,7 @@ geoJSON.get('/quizanswers/topscorers', function (req,res) {
     var querystring = "select array_to_json (array_agg(c)) from ";
     querystring = querystring + "(select rank() over (order by num_questions desc) as rank , port_id ";
     querystring = querystring + "from (select COUNT(*) AS num_questions, port_id ";
-    querystring = querystring + "from public.quizanswers where answer_selected = correct_answergroup by port_id) b limit 5) c";
+    querystring = querystring + "from public.quizanswers where answer_selected = correct_answer group by port_id) b limit 5) c";
     client.query(querystring,function(err,result) { 
       done(); 
       if(err){ 
