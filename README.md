@@ -55,15 +55,21 @@ node dataAPI.js
 
 <p align="justify"><code>dataAPI.js</code>: The main api file for both <strong>Question Setting App</strong> and <strong>Quiz App</strong>, which allowed all the functionalities work correctly. The main functions of <code>dataAPI.js</code> include:
 
+
 * <p align="justify">Add an https server to serve files. </p>
+
 
 * <p align="justify">Add functionality to allow cross-origin queries when PhoneGap is running a server. </p>
 
+
 * <p align="justify">Add CROS. </p>
+
 
 * <p align="justify">Add functionality to log the requests. </p>
 
+
 * <p align="justify">Interconnect to <code>geoJSON.js</code> and <code>crud.js</code>. </p>
+
 
 <br>
 <br>
