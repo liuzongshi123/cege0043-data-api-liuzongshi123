@@ -49,7 +49,7 @@ node dataAPI.js
 
 ## 4. File description
 
-<p align="justify">The files associated to <strong>data-API/strong> are located in the <code>cege0043-data-api-liuzongshi123</code> folder and several subfolders.</p>
+<p align="justify">The files associated to <strong>data-API</strong> are located in the <code>cege0043-data-api-liuzongshi123</code> folder and several subfolders.</p>
 
 * **`cege0043-data-api-liuzongshi123`**
 
